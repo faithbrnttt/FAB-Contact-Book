@@ -25,9 +25,36 @@ public class ContactGUI extends javax.swing.JFrame {
      */
     public ContactGUI() {
         initComponents();
-       
+        Connection con;
+        DefaultTableModel model = (DefaultTableModel) tblContacts.getModel();
+        try {
+            con = (Connection) DriverManager.getConnection("jdbc:mysql://localhost:3306/****", "root", "********");
+           
+            PreparedStatement pss = con.prepareStatement("SELECT * FROM contacts");
+            
+            ResultSet rs=pss.executeQuery();
+            
+            while(rs.next()){
+                int conId = rs.getInt("conID");
+                String conName = rs.getString("conName");
+                String conPhone = rs.getString("conPhone");
+
+                    
+                Object[] row = {conId, conName, conPhone};
+                model.addRow(row);
+                } 
+                
+                
+                
+           con.close();
+        }catch (SQLException ex) {
+            Logger.getLogger(ContactGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        
         this.setLocationRelativeTo(null);
         this.getContentPane().setBackground(Color.GRAY);
+       
     }
 
     /**
@@ -47,7 +74,7 @@ public class ContactGUI extends javax.swing.JFrame {
         txtPhone = new javax.swing.JTextField();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblContacts = new javax.swing.JTable();
-        btnDisplay = new javax.swing.JButton();
+        btnRefresh = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Contacts");
@@ -96,19 +123,26 @@ public class ContactGUI extends javax.swing.JFrame {
             Class[] types = new Class [] {
                 java.lang.Integer.class, java.lang.String.class, java.lang.String.class
             };
+            boolean[] canEdit = new boolean [] {
+                false, false, false
+            };
 
             public Class getColumnClass(int columnIndex) {
                 return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
             }
         });
         tblContacts.setRowHeight(30);
         jScrollPane1.setViewportView(tblContacts);
 
-        btnDisplay.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        btnDisplay.setText("DISPLAY ALL");
-        btnDisplay.addActionListener(new java.awt.event.ActionListener() {
+        btnRefresh.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        btnRefresh.setText("REFRESH");
+        btnRefresh.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnDisplayActionPerformed(evt);
+                btnRefreshActionPerformed(evt);
             }
         });
 
@@ -133,9 +167,9 @@ public class ContactGUI extends javax.swing.JFrame {
                         .addComponent(txtPhone, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(btnDisplay)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 390, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(56, Short.MAX_VALUE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 521, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnRefresh))
+                .addContainerGap(58, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -160,7 +194,7 @@ public class ContactGUI extends javax.swing.JFrame {
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(btnDelete)
                             .addComponent(btnAdd)
-                            .addComponent(btnDisplay))
+                            .addComponent(btnRefresh))
                         .addGap(21, 21, 21))))
         );
 
@@ -172,6 +206,7 @@ public class ContactGUI extends javax.swing.JFrame {
         String phone = txtPhone.getText();
         String fPhone = String.valueOf(phone).replaceFirst("(\\d{3})(\\d{3})(\\d+)", "($1)-$2-$3");
        
+        
         if(name.equals("") || !Pattern.matches("[a-zA-Z\s]+", name)) {
            JOptionPane.showMessageDialog(this, "You have to enter a name to continue");
         }else if(fPhone.equals("")) {
@@ -180,19 +215,23 @@ public class ContactGUI extends javax.swing.JFrame {
             int id = 0;
             Connection con;
             try {
-                con = (Connection) DriverManager.getConnection("jdbc:mysql://localhost:3306/****", "root", "*******");
+                con = (Connection) DriverManager.getConnection("jdbc:mysql://localhost:3306/****", "root", "********");
            
-            PreparedStatement ps = con.prepareStatement("INSERT INTO contacts VALUES(?,?,?)");
-            ps.setInt(1, id++);
-            ps.setString(2, name);
-            ps.setString(3, fPhone);
+                PreparedStatement ps = con.prepareStatement("INSERT INTO contacts VALUES(?,?,?)");
+                ps.setInt(1, id++);
+                ps.setString(2, name);
+                ps.setString(3, fPhone);
         			
-            ps.executeUpdate();
-					
-            con.close();
-            } catch (SQLException ex) {
+                ps.executeUpdate();
+                
+                
+                
+                con.close();
+            }catch (SQLException ex) {
                 Logger.getLogger(ContactGUI.class.getName()).log(Level.SEVERE, null, ex);
             }
+            
+            
         }
         
         txtName.setText("");
@@ -208,9 +247,9 @@ public class ContactGUI extends javax.swing.JFrame {
         model.removeRow(tblContacts.getSelectedRow());
         Connection con;
         try{
-            con = (Connection) DriverManager.getConnection("jdbc:mysql://localhost:3306/****", "root", "*******");
+            con = (Connection) DriverManager.getConnection("jdbc:mysql://localhost:3306/****", "root", "********");
            
-            PreparedStatement ps = con.prepareStatement("DELETE FROM contacts WHERE contactName=?");
+            PreparedStatement ps = con.prepareStatement("DELETE FROM contacts WHERE conName=?");
             ps.setString(1, value);
             ps.executeUpdate();
             
@@ -221,33 +260,11 @@ public class ContactGUI extends javax.swing.JFrame {
         
     }//GEN-LAST:event_btnDeleteActionPerformed
 
-    private void btnDisplayActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDisplayActionPerformed
-
-        Connection con;
-        try {
-             con = (Connection) DriverManager.getConnection("jdbc:mysql://localhost:3306/****", "root", "*******");
-             
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM contacts");
-             ResultSet rs = ps.executeQuery();
-             
-             while(rs.next()) {
-                 String id = String.valueOf(rs.getString("contactID"));
-                 String name = String.valueOf(rs.getString("contactName"));
-                 String phone = String.valueOf(rs.getString("contactPhone"));
-                 
-             
-                 Object[] row = {id, name, phone};
-                 DefaultTableModel model = (DefaultTableModel) tblContacts.getModel();
-                 
-                 model.addRow(row);
-             }
-                     
-             con.close();
-        }
-        catch (SQLException ex) {
-                Logger.getLogger(ContactGUI.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_btnDisplayActionPerformed
+    private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
+        this.dispose();
+        ContactGUI newCG = new ContactGUI();
+        newCG.setVisible(true);
+    }//GEN-LAST:event_btnRefreshActionPerformed
 
     /**
      * @param args the command line arguments
@@ -287,7 +304,7 @@ public class ContactGUI extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
     private javax.swing.JButton btnDelete;
-    private javax.swing.JButton btnDisplay;
+    private javax.swing.JButton btnRefresh;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel lblName;
     private javax.swing.JLabel lblPhone;

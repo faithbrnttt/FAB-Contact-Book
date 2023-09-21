@@ -1,0 +1,9 @@
+use cbdb;
+
+CREATE TABLE contacts (
+	conID INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    conName VARCHAR(100) NOT NULL,
+    conPhone VARCHAR(15) NOT NULL
+);
+
+SELECT * FROM contacts;
